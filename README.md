@@ -138,9 +138,9 @@ rm::Result onFrame(const rm::InputFrame& frame);
 - 坐标单位为 m，角度单位为度；不做单位换算。速度单位是 m/s，角速度单位是 °/s。
 - 预测公式中的 `dt` 是当前成功帧的帧间隔，不是目标自己的 `dt_obs`。
 - 本帧观测到 `TRACK` 目标时，按 `predicted_x = x + velocity_x * dt`、`predicted_y = y + velocity_y * dt` 计算；本帧未观测且仍为 `TRACK` 时，在上一帧预测值上继续累加：`predicted_x += velocity_x * dt`、`predicted_y += velocity_y * dt`，未观测期间速度保持最后一次观测值不变。预测值只写入 `predicted_*`，不覆盖当前 `x` / `y`。
-- 旋转装甲在 `TRACK` 时：本帧观测到时，先用 `dt_obs` 更新 `angular_velocity`，再计算 `predicted_angle = angle + angular_velocity * dt`；本帧未观测到且仍为 `TRACK` 时，先执行 `angle += angular_velocity * dt`，再计算 `predicted_angle = angle + angular_velocity * dt`；达到丢失阈值的那一帧不再推进。进入 `LOST` 后停止位置和角度预测，并将 `x`、`y`、`angle`、`velocity_x`、`velocity_y`、`angular_velocity`、`predicted_x`、`predicted_y`、`predicted_angle` 全部清零。
-- 从 `LOST` 重新追踪的第一帧，状态回到 `TRACK`，`missed_count` 清零，位置和角度更新，速度（x/y 与角度）清零（不按本次与上次观测的差值计算），`predicted_*` 等于当前观测值；之后按相邻观测的时间差更新。
-
+- 旋转装甲在 `TRACK`. 时：本帧观测到时，先用 `dt_obs` 更新 `angular_velocity`，再计算 `predicted_angle = angle + angular_velocity * dt`；本帧未观测到且仍为 `TRACK` 时，先执行 `angle += angular_velocity * dt`，再计算 `predicted_angle = angle + angular_velocity * dt`；达到丢失阈值的那一帧不再推进。进入 `LOST` 后停止位置和角度预测，并将 `x`、`y`、`angle`、`velocity_x`、`velocity_y`、`angular_velocity`、`predicted_x`、`predicted_y`、`predicted_angle` 全部清零。
+- 从 `LOST` 重新追踪的第一帧，状态回到 `TRACK`，`missed_count` 清零，位置和角度更新，速度（x/y 与角度）清零（不按本次与上次观测的差值计算），`prdicted_*` 等于当前观测值；之后按相邻观测的时间差更新。
+e
 ### 6.2 整帧校验与目标创建
 
 以下情况必须**整帧拒绝**，且不修改任何目标、不更新最近成功帧号和时间戳：
@@ -162,8 +162,7 @@ rm::Result onFrame(const rm::InputFrame& frame);
 
 ## 7. 测试帧说明
 
-`testFrames()` 返回 28 帧，帧号和时间戳会故意重复或回退，用于验证非法帧处理。
-
+`testFrames()` 返回 28 帧，帧号和时间戳会故意重复或回退，用于验证非法帧处理。 
 每帧时间戳为 `frame_id * 100'000'000` 纳秒（0.1 秒），帧 24 例外地使用帧 22 的时间戳以触发时间戳回退拒绝；被拒绝的帧不更新最近成功帧号和时间戳。下表中的坐标单位为 m，速度单位为 m/s，角度单位为 °，角速度单位为 °/s。
 
 | 帧号 | 场景 | 预期行为 |
